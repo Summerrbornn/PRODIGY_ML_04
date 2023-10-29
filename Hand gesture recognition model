@@ -1,0 +1,56 @@
+import tensorflow as tf
+from tensorflow import keras
+from tensorflow.keras import layers
+from sklearn.model_selection import train_test_split
+
+# Load and preprocess the dataset
+data_dir = 'path_to_dataset'
+image_size = (64, 64)
+batch_size = 32
+
+datagen = keras.preprocessing.image.ImageDataGenerator(rescale=1.0/255.0, validation_split=0.2)
+
+train_generator = datagen.flow_from_directory(
+    data_dir,
+    target_size=image_size,
+    batch_size=batch_size,
+    class_mode='categorical',
+    subset='training'
+)
+
+val_generator = datagen.flow_from_directory(
+    data_dir,
+    target_size=image_size,
+    batch_size=batch_size,
+    class_mode='categorical',
+    subset='validation'
+)
+
+# Define and compile the CNN model
+model = keras.Sequential([
+    layers.Conv2D(32, (3, 3), activation='relu', input_shape=(64, 64, 3)),
+    layers.MaxPooling2D((2, 2)),
+    layers.Flatten(),
+    layers.Dense(128, activation='relu'),
+    layers.Dense(10, activation='softmax')
+])
+
+model.compile(optimizer='adam',
+              loss='categorical_crossentropy',
+              metrics=['accuracy'])
+
+# Train the model
+epochs = 10
+model.fit(train_generator, validation_data=val_generator, epochs=epochs)
+
+# Evaluate the model
+test_generator = datagen.flow_from_directory(
+    data_dir,
+    target_size=image_size,
+    batch_size=batch_size,
+    class_mode='categorical',
+    shuffle=False
+)
+
+test_loss, test_accuracy = model.evaluate(test_generator)
+print(f'Test accuracy: {test_accuracy * 100:.2f}%')
